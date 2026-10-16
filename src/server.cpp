@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void HttpServer::init_hints(struct addrinfo& hints) {
+void HttpServer::_init_hints(struct addrinfo& hints) {
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;        // IPv4 or IPv6 is fine
     hints.ai_socktype = SOCK_STREAM;    // TCP
@@ -22,7 +22,7 @@ void HttpServer::listen(unsigned short port) {
     struct addrinfo *addrs;
     int status;
 
-    init_hints(hints);
+    _init_hints(hints);
     status = getaddrinfo(
         nullptr, 
         std::to_string(port).data(), 
@@ -87,4 +87,57 @@ void HttpServer::listen(unsigned short port) {
     }
 
     std::cout << std::format("Now listening on port {}.\n" , port);
+
+    while (true) {
+        int client_socket = accept(_server_socket, nullptr, nullptr);
+        if (client_socket < 0) {
+            std::string err = strerror(errno);
+            std::cerr << "failed to accept incoming connection: " << err << "\n";
+        }
+
+        std::cout << "New client connected." << "\n";
+
+        _process_client(client_socket);
+        close(client_socket);
+    }
+}
+
+void HttpServer::_process_client(int client_socket) {
+    char buf[4096];
+    ssize_t bytes_recieved = 0;
+    while (true) {
+        bytes_recieved = recv(client_socket, buf, sizeof buf, 0);
+        if (bytes_recieved < 0) {
+            std::cerr << "failed to send response: " << strerror(errno) << "\n";
+            return;
+        }
+
+        if (bytes_recieved == 0) {
+            break;
+        }
+
+        std::cout.write(buf, bytes_recieved);
+    }
+
+    std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+    size_t total_bytes_sent = 0;
+    while (total_bytes_sent < response.size()) {
+        ssize_t bytes_sent = send(
+            client_socket, 
+            response.data() + total_bytes_sent,
+            response.length() - total_bytes_sent,
+            0
+        );
+
+        if (bytes_sent < 0) {
+            std::cerr << "failed to send response: " << strerror(errno) << "\n";
+            return;
+        }
+
+        if (bytes_sent == 0) {
+            return;
+        }
+        
+        total_bytes_sent += static_cast<size_t>(bytes_sent);
+    }
 }

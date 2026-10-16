@@ -15,6 +15,7 @@ class HttpServer {
          * @return std::expected<bool, std::error_code> Whether or not the operation 
          */
         void listen(unsigned short port);
+        
     
     private:
         /**
@@ -27,7 +28,15 @@ class HttpServer {
          *
          * @param hints The addrinfo hints struct to initialize.
          */
-        void init_hints(struct addrinfo& hints);
+        void _init_hints(struct addrinfo& hints);
+
+        /**
+         * @brief Process an incoming connection. If the request is not a valid HTTP request
+         * then reject it and continue to listen for requests.
+         * 
+         * @param client_socket The file descriptor for the incoming connection.
+         */
+        void _process_client(int client_socket);
 
         const static unsigned short BACKLOG = 10;
         int _server_socket = -1;
