@@ -3,12 +3,13 @@ project(
   'cpp',
   version: '0.1.0',
   meson_version: '>=0.63.0',
-  default_options: ['cpp_std=c++20', 'warning_level=3'],
+  default_options: ['cpp_std=c++23', 'warning_level=2'],
 )
 
 executable(
   'http',
   'src/main.cpp',
+  'src/server.cpp',
   include_directories: include_directories('include'),
   install: true,
 )

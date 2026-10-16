@@ -1,14 +1,23 @@
 MESON ?= meson
 BUILD_DIR ?= build
 RELEASE_DIR ?= build-release
+CPP_STD ?= c++23
 
-.PHONY: all build run test-request release run-release clean
+.PHONY: all build setup run test-request release run-release clean
 
 all: build
 
 build:
 	@test -f "$(BUILD_DIR)/meson-private/coredata.dat" || $(MESON) setup "$(BUILD_DIR)"
 	$(MESON) compile -C "$(BUILD_DIR)"
+
+setup:
+	@if test -f "$(BUILD_DIR)/meson-private/coredata.dat"; then \
+		$(MESON) configure "$(BUILD_DIR)" -Dcpp_std=$(CPP_STD) && \
+		$(MESON) setup --reconfigure "$(BUILD_DIR)"; \
+	else \
+		$(MESON) setup "$(BUILD_DIR)" -Dcpp_std=$(CPP_STD); \
+	fi
 
 run: build
 	"./$(BUILD_DIR)/http"
