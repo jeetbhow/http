@@ -1,3 +1,4 @@
+#include "http.h"
 #include "server.h"
 
 #include <iostream>
@@ -10,11 +11,13 @@
 #include <netdb.h>
 
 int main() {
-    HttpServer server;
-    
-    try {
-        server.listen(8080);
-    } catch (std::exception& e) {
-        std::cout << e.what() << "\n";
-    }
+    std::string example_request = 
+    "GET /index.html HTTP/1.1\r\n"
+    "Host: example.com\r\n"
+    "User-Agent: Mozilla/5.0\r\n"
+    "Accept: text/html\r\n"
+    "Connection: keep-alive\r\n";
+
+    HttpRequestParser parser{std::move(example_request)};
+    parser.parse();
 }

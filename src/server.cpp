@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <netdb.h>
@@ -103,41 +104,23 @@ void HttpServer::listen(unsigned short port) {
 }
 
 void HttpServer::_process_client(int client_socket) {
-    char buf[4096];
-    ssize_t bytes_recieved = 0;
+    std::stringstream request;
+    std::string req_str; 
     while (true) {
-        bytes_recieved = recv(client_socket, buf, sizeof buf, 0);
+        char buf[4096];
+        ssize_t bytes_recieved = recv(client_socket, buf, sizeof buf, 0);
+        
         if (bytes_recieved < 0) {
-            std::cerr << "failed to send response: " << strerror(errno) << "\n";
+            std::cerr << "failed to read request: " << strerror(errno) << "\n";
             return;
         }
 
         if (bytes_recieved == 0) {
             break;
         }
-
-        std::cout.write(buf, bytes_recieved);
-    }
-
-    std::string response = "HTTP/1.1 200 OK\r\n\r\n";
-    size_t total_bytes_sent = 0;
-    while (total_bytes_sent < response.size()) {
-        ssize_t bytes_sent = send(
-            client_socket, 
-            response.data() + total_bytes_sent,
-            response.length() - total_bytes_sent,
-            0
-        );
-
-        if (bytes_sent < 0) {
-            std::cerr << "failed to send response: " << strerror(errno) << "\n";
-            return;
-        }
-
-        if (bytes_sent == 0) {
-            return;
-        }
         
-        total_bytes_sent += static_cast<size_t>(bytes_sent);
+        request.write(buf, bytes_recieved);
     }
+    
+    
 }

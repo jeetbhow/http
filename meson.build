@@ -10,6 +10,10 @@ executable(
   'http',
   'src/main.cpp',
   'src/server.cpp',
+  'src/utils.cpp',
+  'src/http.cpp',
   include_directories: include_directories('include'),
   install: true,
 )
+
+subdir('tests')

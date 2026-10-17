@@ -3,7 +3,7 @@ BUILD_DIR ?= build
 RELEASE_DIR ?= build-release
 CPP_STD ?= c++23
 
-.PHONY: all build setup run test-request release run-release clean
+.PHONY: all build setup run test test-request release run-release clean
 
 all: build
 
@@ -21,6 +21,9 @@ setup:
 
 run: build
 	"./$(BUILD_DIR)/http"
+
+test: build
+	$(MESON) test -C "$(BUILD_DIR)" --print-errorlogs
 
 test-request:
 	python3 scripts/test_request.py
