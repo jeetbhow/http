@@ -48,15 +48,6 @@ static const std::unordered_map<std::string, HttpVersion> HTTP_VERSIONS = {
     {"3.0", HttpVersion::THREE}
 };
 
-/**
- * @brief Map a string onto its corresponding HttpMethod and return it. Consumes the string
- * on completion.
- * 
- * @param str A string representing the name of an HTTP method (GET, POST, etc.).
- * @return HttpMethod An enum encoding that method.
- */
-std::optional<HttpMethod> create_http_method(std::string&& str);
-
 class HttpRequestParser {
     public:
         /**
