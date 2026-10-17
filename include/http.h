@@ -4,9 +4,11 @@
 #include <string>
 #include <expected>
 #include <optional>
+#include <utility>
 
 
 enum class HttpMethod {
+    UNINTIALIZED,
     GET,
     POST,
     DELETE,
@@ -25,14 +27,26 @@ enum class HttpParseStatus {
     Ok,
     InvalidMethod,
     InvalidVersion,
-    InvalidRequestLine
+    InvalidRequestLine,
+    MalformedHeader
 };
 
-struct HttpRequest {
-    HttpMethod method;
+class HttpRequest {
+public:
+    HttpMethod method = HttpMethod::UNINTIALIZED;
     std::string target;
     std::string version;
-    std::unordered_map<std::string, std::string> headers;
+
+    HttpRequest() = default;
+    HttpRequest(HttpMethod method, std::string target, std::string version)
+        : method(method), target(std::move(target)), version(std::move(version)) {}
+
+    // All headers are stored lowercase (e.g. Content-Type -> content-type).
+    std::optional<std::string> get_header(const std::string& name) const;
+
+private:
+    friend class HttpRequestParser;                             // So the parser can create an HTTPRequest.
+    std::unordered_map<std::string, std::string> _headers;      
 };
 
 
@@ -52,16 +66,15 @@ class HttpRequestParser {
     public:
         /**
          * @brief Construct a new HttpRequestParser that parses the contents that are
-         * laid out in an `std::string`. Note that this constructor uses move semantics
-         * and thus the `std::string` is consumed after use.
+         * laid out in an `std::string`. 
          *
          * @param request A `std::string` containing the entire request, including the 
          * CRLF separating the request line, headers, and body. 
          */
-        HttpRequestParser(std::string&& request) : _request(std::move(request)) {}
+        HttpRequestParser(std::string request) : _request(std::move(request)) {}
 
         /**
-         * @brief Parse out the contents of the request and return an HttpRequest struct
+         * @brief Parse out the contents of the request and return an HttpRequest object
          * that contains the important fields and methods for processing it.
 
          * @return HttpRequest An object that contains the parsed request informtion.
@@ -69,6 +82,9 @@ class HttpRequestParser {
         std::expected<HttpRequest, HttpParseStatus> parse();
 
     private:
+        HttpParseStatus parse_request_line(HttpRequest& request);
+        HttpParseStatus parse_headers(HttpRequest& request);
+
         size_t _start = 0;                      // Cursor used for parsing.
         std::string _request;                   // The entire request.
 };

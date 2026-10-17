@@ -1,17 +1,96 @@
 #include "http.h"
 
 #include <expected>
+#include <algorithm>
+#include <cctype>
+#include <format>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <iostream>
 
+#include "utils.h"
 
-HttpParseStatus parse_request_line(
-    HttpRequest& request, 
-    const std::string& request_line
-) {
-    std::stringstream ss{request_line};
+std::optional<std::string> HttpRequest::get_header(const std::string& name) const {
+    std::string key = name;
+    std::transform(
+        key.begin(), 
+        key.end(), 
+        key.begin(), 
+        [](unsigned char c) {
+            return std::tolower(c);
+        }
+    );
+
+    if (!_headers.contains(key)) {
+        return std::nullopt;
+    }
+    
+    return _headers.at(key);
+}
+
+
+std::expected<HttpRequest, HttpParseStatus> HttpRequestParser::parse() {
+    HttpRequest request{};
+    const auto request_line_status = parse_request_line(request);
+    if (request_line_status != HttpParseStatus::Ok) {
+        return std::unexpected(request_line_status);
+    }
+
+    const auto headers_status = parse_headers(request);
+    if (headers_status != HttpParseStatus::Ok) {
+        return std::unexpected(headers_status);
+    }
+
+    return request;
+}
+
+HttpParseStatus HttpRequestParser::parse_headers(HttpRequest& request) {
+    std::unordered_map<std::string, std::string> headers;
+    size_t end = _start;
+    while ((end = _request.find("\r\n", _start)) != std::string::npos) {
+        // Empty line indicates end of headers.
+        if (end == _start) {
+            _start = end + 2;
+            break;
+        }
+        
+        size_t colon = _request.find(":", _start);
+        if (colon == std::string::npos || colon >= end) {
+            return HttpParseStatus::MalformedHeader;
+        }
+
+        std::string key = _request.substr(_start, colon - _start);
+        std::string val = trim(
+            _request.substr(colon + 1, end - (colon + 1))
+        );
+
+        // We store all header names as lowercase.
+        std::transform(
+            key.begin(), 
+            key.end(), 
+            key.begin(), 
+            [](unsigned char c) {
+                return std::tolower(c);
+            }
+        );
+
+        headers[key] = val;
+        _start = end + 2;
+    }
+
+    request._headers = std::move(headers);
+
+    return HttpParseStatus::Ok;
+}
+
+HttpParseStatus HttpRequestParser::parse_request_line(HttpRequest& request) {
+    const size_t end = _request.find("\r\n", _start);
+    if (end == std::string::npos) {
+        return HttpParseStatus::InvalidRequestLine;
+    }
+
+    std::stringstream ss{_request.substr(_start, end - _start)};
     std::string token;
     std::vector<std::string> tokens;
     while (std::getline(ss, token, ' ')) {
@@ -51,28 +130,8 @@ HttpParseStatus parse_request_line(
     }
 
     request.method = HTTP_METHODS.at(method);
-    request.target = target;
-    request.version = version;
-
+    request.target = std::move(target);
+    request.version = std::move(version);
+    _start = end + 2;
     return HttpParseStatus::Ok;
-}
-
-std::expected<HttpRequest, HttpParseStatus> HttpRequestParser::parse() {
-    HttpRequest request;
-    std::vector<std::string> tokens;
-    
-    size_t end = _start;
-    while ((end = _request.find("\r\n", _start)) != std::string::npos) {
-        std::string token = _request.substr(_start, end - _start);
-        tokens.push_back(token);
-        
-        _start = end + 2;
-    }
-
-    HttpParseStatus status = parse_request_line(request, tokens[0]);
-    if (status != HttpParseStatus::Ok) {
-        return std::unexpected(status);
-    }
-
-    return request;
 }

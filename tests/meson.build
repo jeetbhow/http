@@ -4,6 +4,7 @@ http_request_parser_tests = executable(
   'http_request_parser_tests',
   'http_request_parser_test.cpp',
   '../src/http.cpp',
+  '../src/utils.cpp',
   include_directories: include_directories('../include'),
   dependencies: gtest_dep,
 )

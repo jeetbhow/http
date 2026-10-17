@@ -25,10 +25,17 @@ TEST(HttpRequestParser, ParsesHeaders) {
         "\r\n"
     };
 
-    auto result = parser.parse();
+    const auto result = parser.parse();
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->headers["Host"], "example-host");
-    EXPECT_EQ(result->headers["User-Agent"], "http-test-client");
-    EXPECT_EQ(result->headers["Connection"], "close");
+    EXPECT_EQ(result->get_header("Host"), "example-host");
+    EXPECT_EQ(result->get_header("host"), "example-host");
+    EXPECT_EQ(result->get_header("User-Agent"), "http-test-client");
+    EXPECT_EQ(result->get_header("CONNECTION"), "close");
+    EXPECT_EQ(result->get_header("Missing"), std::nullopt);
+}
+
+TEST(HttpRequest, MissingHeaderReturnsNullopt) {
+    const HttpRequest request{HttpMethod::GET, "/", "1.1"};
+    EXPECT_EQ(request.get_header("Host"), std::nullopt);
 }
