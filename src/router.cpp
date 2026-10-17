@@ -35,7 +35,7 @@ void Router::add(HttpMethod method, const std::string& path) {
         curr = curr->_children[s].get();
     }
 
-    curr->_routes.insert_or_assign(method, Route { method, path });
+    curr->_routes.insert_or_assign(method, path);
 }
 
 void Router::print() const {
@@ -56,7 +56,7 @@ void Router::print(const RouterNode& node, const std::string& prefix) const {
         if (!child->_routes.empty()) {
             std::cout << " [";
             const char* separator = "";
-            for (const auto& [method, route] : child->_routes) {
+            for (const auto& [method, path] : child->_routes) {
                 std::cout << separator << method_name(method);
                 separator = ", ";
             }

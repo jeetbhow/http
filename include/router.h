@@ -9,11 +9,6 @@
 #include "http.h"
 
 
-struct Route {
-    HttpMethod method; 
-    std::string path;
-};
-
 class Router {
 public:
     Router() = default;
@@ -29,7 +24,7 @@ private:
         RouterNode(std::string val) : _val(std::move(val)) {}
          
         std::string _val;                                                          // Contains a path segment.
-        std::map<HttpMethod, Route> _routes;                                       // Registered methods for this path segment.
+        std::map<HttpMethod, std::string> _routes;                                 // Registered methods and full paths.
         std::unordered_map<std::string, std::unique_ptr<RouterNode>> _children;
     };
 

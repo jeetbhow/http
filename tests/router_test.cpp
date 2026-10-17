@@ -19,8 +19,7 @@ class RouterAddTest : public ::testing::Test {
         static void expect_route(const RouterNode& node, HttpMethod method, const std::string& path) {
             const auto it = node._routes.find(method);
             ASSERT_NE(it, node._routes.end());
-            EXPECT_EQ(it->second.method, method);
-            EXPECT_EQ(it->second.path, path);
+            EXPECT_EQ(it->second, path);
         }
 
         // The current router stores the leading slash as an empty segment.
