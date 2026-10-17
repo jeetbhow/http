@@ -6,15 +6,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "http.h"
 #include "router.h"
-#include "utils.h"
 
 int main() {
-    std::string create_id = "/user/create/:id";
-    std::string get_id = "/user/:id";
-
     Router r;
-    r.add(create_id);
-    r.add(get_id);
+    r.add(HttpMethod::GET, "/users/:id");
+    r.add(HttpMethod::PUT, "/users/:id");
     r.print();
 }

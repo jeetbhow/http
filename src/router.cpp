@@ -5,34 +5,25 @@
 
 #include "utils.h"
 
-// precond: route is valid
-void Router::add(const std::string& route) {
-    // /users/add/:id
-    if (!route.starts_with("/")) {
-        throw std::invalid_argument("route must start with /");
+
+// precond: route path is valid
+void Router::add(HttpMethod method, const std::string& path) {
+    // E.g. /users/add/:id
+    if (!path.starts_with("/")) {
+        throw std::invalid_argument("route must begin with /");
     }
 
-    Node* root = &_root; 
-    std::vector<std::string> path_segments = split(route, '/');
-    for (const std::string& seg : path_segments) {
-
-        Node* next = nullptr;
-        for (auto& child : root->children) {
-            if (child->value == seg) {
-                next = child.get();
-                break;
-            }
+    std::vector<std::string> segments = split(path, '/');
+    
+    RouterNode* curr = &_root;
+    for (const std::string& s : segments) {
+        if (!curr->_children.contains(s)) {
+            curr->_children[s] = std::make_unique<RouterNode>(s);
         }
-
-        if (next == nullptr) {
-            auto new_node = std::make_unique<Node>(seg);
-            next = new_node.get();    
-            root->children.push_back(std::move(new_node));
-        }
-
-        root = next;
+        curr = curr->_children[s].get();
     }
-    root->is_route = true;
+
+    curr->_route = Route { method, path };
 }
 
 void Router::print() const {
@@ -40,15 +31,15 @@ void Router::print() const {
 }
 
 
-void Router::print(const Node& node, const std::string& prefix) const {
-    for (size_t i = 0; i < node.children.size(); ++i) {
-        const auto& child = node.children[i];
+void Router::print(const RouterNode& node, const std::string& prefix) const {
+    size_t i = 0;
+    for (const auto& [seg, child] : node._children) {
 
-        bool isLast = (i == node.children.size() - 1);
+        const bool isLast = (++i == node._children.size());
 
         std::cout << prefix
                   << (isLast ? "└── " : "├── ")
-                  << child->value
+                  << child->_val
                   << '\n';
 
         print(

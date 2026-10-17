@@ -5,142 +5,187 @@
 
 class RouterAddTest : public ::testing::Test {
     protected:
+        using RouterNode = Router::RouterNode;
+
         Router router;
 
-        const Node& root() const { return router._root; }
+        const RouterNode& root() const { return router._root; }
 
-        static const Node* child(const Node& parent, const std::string& value) {
-            for (const auto& node : parent.children) {
-                if (node->value == value) {
-                    return node.get();
-                }
-            }
-            return nullptr;
+        static const RouterNode* child(const RouterNode& parent, const std::string& value) {
+            const auto it = parent._children.find(value);
+            return it == parent._children.end() ? nullptr : it->second.get();
+        }
+
+        static void expect_route(const RouterNode& node, HttpMethod method, const std::string& path) {
+            const auto it = node._routes.find(method);
+            ASSERT_NE(it, node._routes.end());
+            EXPECT_EQ(it->second.method, method);
+            EXPECT_EQ(it->second.path, path);
         }
 
         // The current router stores the leading slash as an empty segment.
-        const Node* slash() const { return child(root(), ""); }
+        const RouterNode* slash() const { return child(root(), ""); }
 };
 
 TEST_F(RouterAddTest, CreatesSegmentsAndMarksOnlyTheFinalNodeAsARoute) {
-    router.add("/users/add");
+    router.add(HttpMethod::GET, "/users/add");
 
-    ASSERT_EQ(root().children.size(), 1u);
-    EXPECT_FALSE(root().is_route);
+    ASSERT_EQ(root()._children.size(), 1u);
+    EXPECT_TRUE(root()._routes.empty());
 
-    const Node* prefix = slash();
+    const RouterNode* prefix = slash();
 
     ASSERT_NE(prefix, nullptr);
-    EXPECT_FALSE(prefix->is_route);
-    ASSERT_EQ(prefix->children.size(), 1u);
+    EXPECT_TRUE(prefix->_routes.empty());
+    ASSERT_EQ(prefix->_children.size(), 1u);
 
-    const Node* users = child(*prefix, "users");
+    const RouterNode* users = child(*prefix, "users");
 
     ASSERT_NE(users, nullptr);
-    EXPECT_FALSE(users->is_route);
-    ASSERT_EQ(users->children.size(), 1u);
+    EXPECT_TRUE(users->_routes.empty());
+    ASSERT_EQ(users->_children.size(), 1u);
 
-    const Node* add = child(*users, "add");
+    const RouterNode* add = child(*users, "add");
 
     ASSERT_NE(add, nullptr);
-    EXPECT_TRUE(add->is_route);
-    EXPECT_TRUE(add->children.empty());
+    expect_route(*add, HttpMethod::GET, "/users/add");
+    EXPECT_TRUE(add->_children.empty());
 }
 
 TEST_F(RouterAddTest, ReusesSharedPrefixes) {
-    router.add("/users/add");
-    router.add("/users/delete");
-    router.add("/posts");
+    router.add(HttpMethod::GET, "/users/add");
+    router.add(HttpMethod::DELETE, "/users/delete");
+    router.add(HttpMethod::POST, "/posts");
 
-    ASSERT_EQ(root().children.size(), 1u);
+    ASSERT_EQ(root()._children.size(), 1u);
 
-    const Node* prefix = slash();
+    const RouterNode* prefix = slash();
 
     ASSERT_NE(prefix, nullptr);
-    ASSERT_EQ(prefix->children.size(), 2u);
+    ASSERT_EQ(prefix->_children.size(), 2u);
 
-    const Node* users = child(*prefix, "users");
-    const Node* posts = child(*prefix, "posts");
+    const RouterNode* users = child(*prefix, "users");
+    const RouterNode* posts = child(*prefix, "posts");
 
     ASSERT_NE(users, nullptr);
     ASSERT_NE(posts, nullptr);
-    EXPECT_FALSE(users->is_route);
-    EXPECT_TRUE(posts->is_route);
-    EXPECT_TRUE(posts->children.empty());
-    ASSERT_EQ(users->children.size(), 2u);
+    EXPECT_TRUE(users->_routes.empty());
+    expect_route(*posts, HttpMethod::POST, "/posts");
+    EXPECT_TRUE(posts->_children.empty());
+    ASSERT_EQ(users->_children.size(), 2u);
 
-    const Node* add = child(*users, "add");
-    const Node* remove = child(*users, "delete");
+    const RouterNode* add = child(*users, "add");
+    const RouterNode* remove = child(*users, "delete");
 
     ASSERT_NE(add, nullptr);
     ASSERT_NE(remove, nullptr);
-    EXPECT_TRUE(add->is_route);
-    EXPECT_TRUE(remove->is_route);
+    expect_route(*add, HttpMethod::GET, "/users/add");
+    expect_route(*remove, HttpMethod::DELETE, "/users/delete");
 }
 
 TEST_F(RouterAddTest, AddingADuplicateDoesNotCreateMoreNodes) {
-    router.add("/users");
-    router.add("/users");
+    router.add(HttpMethod::GET, "/users");
+    router.add(HttpMethod::GET, "/users");
 
-    ASSERT_EQ(root().children.size(), 1u);
+    ASSERT_EQ(root()._children.size(), 1u);
 
-    const Node* prefix = slash();
+    const RouterNode* prefix = slash();
 
     ASSERT_NE(prefix, nullptr);
-    ASSERT_EQ(prefix->children.size(), 1u);
+    ASSERT_EQ(prefix->_children.size(), 1u);
 
-    const Node* users = child(*prefix, "users");
+    const RouterNode* users = child(*prefix, "users");
 
     ASSERT_NE(users, nullptr);
-    EXPECT_TRUE(users->is_route);
-    EXPECT_TRUE(users->children.empty());
+    expect_route(*users, HttpMethod::GET, "/users");
+    EXPECT_TRUE(users->_children.empty());
 }
 
 TEST_F(RouterAddTest, RegisteringAPrefixPreservesItsChildren) {
-    router.add("/users/add");
-    router.add("/users");
+    router.add(HttpMethod::GET, "/users/add");
+    router.add(HttpMethod::GET, "/users");
 
-    const Node* prefix = slash();
+    const RouterNode* prefix = slash();
 
     ASSERT_NE(prefix, nullptr);
-    ASSERT_EQ(prefix->children.size(), 1u);
+    ASSERT_EQ(prefix->_children.size(), 1u);
 
-    const Node* users = child(*prefix, "users");
+    const RouterNode* users = child(*prefix, "users");
 
     ASSERT_NE(users, nullptr);
-    EXPECT_TRUE(users->is_route);
-    ASSERT_EQ(users->children.size(), 1u);
+    expect_route(*users, HttpMethod::GET, "/users");
+    ASSERT_EQ(users->_children.size(), 1u);
 
-    const Node* add = child(*users, "add");
+    const RouterNode* add = child(*users, "add");
     
     ASSERT_NE(add, nullptr);
-    EXPECT_TRUE(add->is_route);
+    expect_route(*add, HttpMethod::GET, "/users/add");
 }
 
 TEST_F(RouterAddTest, ExtendingARoutePreservesItsRouteMarker) {
-    router.add("/users");
-    router.add("/users/add");
+    router.add(HttpMethod::GET, "/users");
+    router.add(HttpMethod::GET, "/users/add");
 
-    const Node* prefix = slash();
+    const RouterNode* prefix = slash();
 
     ASSERT_NE(prefix, nullptr);
-    ASSERT_EQ(prefix->children.size(), 1u);
+    ASSERT_EQ(prefix->_children.size(), 1u);
 
-    const Node* users = child(*prefix, "users");
+    const RouterNode* users = child(*prefix, "users");
     
     ASSERT_NE(users, nullptr);
-    EXPECT_TRUE(users->is_route);
-    ASSERT_EQ(users->children.size(), 1u);
+    expect_route(*users, HttpMethod::GET, "/users");
+    ASSERT_EQ(users->_children.size(), 1u);
     
-    const Node* add = child(*users, "add");
+    const RouterNode* add = child(*users, "add");
     
     ASSERT_NE(add, nullptr);
-    EXPECT_TRUE(add->is_route);
+    expect_route(*add, HttpMethod::GET, "/users/add");
 }
 
 TEST_F(RouterAddTest, RejectsRoutesWithoutALeadingSlash) {
-    EXPECT_THROW(router.add("users/add"), std::invalid_argument);
-    EXPECT_THROW(router.add(""), std::invalid_argument);
-    EXPECT_TRUE(root().children.empty());
-    EXPECT_FALSE(root().is_route);
+    EXPECT_THROW(router.add(HttpMethod::GET, "users/add"), std::invalid_argument);
+    EXPECT_THROW(router.add(HttpMethod::GET, ""), std::invalid_argument);
+    EXPECT_TRUE(root()._children.empty());
+    EXPECT_TRUE(root()._routes.empty());
+}
+
+TEST_F(RouterAddTest, PreservesDifferentMethodsForTheSamePath) {
+    router.add(HttpMethod::GET, "/users/:id");
+    router.add(HttpMethod::PUT, "/users/:id");
+    router.add(HttpMethod::GET, "/users/:id");
+
+    const RouterNode* prefix = slash();
+    ASSERT_NE(prefix, nullptr);
+    const RouterNode* users = child(*prefix, "users");
+    ASSERT_NE(users, nullptr);
+    ASSERT_EQ(users->_children.size(), 1u);
+    const RouterNode* id = child(*users, ":id");
+    ASSERT_NE(id, nullptr);
+    ASSERT_EQ(id->_routes.size(), 2u);
+    expect_route(*id, HttpMethod::GET, "/users/:id");
+    expect_route(*id, HttpMethod::PUT, "/users/:id");
+}
+
+TEST_F(RouterAddTest, PrintsMethodsOnlyOnRegisteredRoutes) {
+    router.add(HttpMethod::GET, "/users/:id");
+    router.add(HttpMethod::PUT, "/users/:id");
+    router.add(HttpMethod::POST, "/users/:id");
+    router.add(HttpMethod::DELETE, "/users/:id");
+    router.add(HttpMethod::GET, "/users");
+
+    testing::internal::CaptureStdout();
+    router.print();
+    const std::string output = testing::internal::GetCapturedStdout();
+
+    EXPECT_EQ(output,
+              "└── \n"
+              "    └── users [GET]\n"
+              "        └── :id [GET, POST, DELETE, PUT]\n");
+}
+
+TEST_F(RouterAddTest, PrintingAnEmptyRouterProducesNoOutput) {
+    testing::internal::CaptureStdout();
+    router.print();
+    EXPECT_TRUE(testing::internal::GetCapturedStdout().empty());
 }
