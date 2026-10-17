@@ -1,10 +1,10 @@
 # http
 
-A minimal C++20 project built with Meson and Ninja.
+A minimal C++23 project built with Meson and Ninja.
 
 ## Requirements
 
-- A C++20 compiler
+- A C++23 compiler
 - Meson 0.63 or newer
 - Ninja
 
@@ -37,6 +37,23 @@ meson compile -C build-release
 ```
 
 The executable starts in `src/main.cpp`; build targets are defined in `meson.build`.
+
+## Unit tests
+
+GoogleTest is provided through the pinned WrapDB package in
+`subprojects/gtest.wrap`. Meson uses an installed GoogleTest when available and
+downloads the wrap as a fallback. The first fallback build requires internet
+access; no separate GoogleTest installation is needed.
+
+```sh
+make test
+# Or, after configuring the build directory:
+meson test -C build --print-errorlogs
+```
+
+Tests live in `tests/` and use GoogleTest's supplied `main()`. Add new test
+sources to `tests/meson.build`. To explicitly test the WrapDB fallback, configure
+with `meson setup build --reconfigure --force-fallback-for=gtest`.
 
 ## Send a test request
 
