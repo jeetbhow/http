@@ -3,6 +3,7 @@
 #include "router.h"
 
 #include <memory>
+#include <map>
 #include <string>
 
 #include "http.h"
@@ -28,7 +29,7 @@ private:
         RouterNode(std::string val) : _val(std::move(val)) {}
          
         std::string _val;                                                          // Contains a path segment.
-        std::optional<Route> _route;                                               // Not all router nodes are actual routes in the server.
+        std::map<HttpMethod, Route> _routes;                                       // Registered methods for this path segment.
         std::unordered_map<std::string, std::unique_ptr<RouterNode>> _children;
     };
 

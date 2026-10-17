@@ -5,6 +5,18 @@
 
 #include "utils.h"
 
+namespace {
+const char* method_name(HttpMethod method) {
+    switch (method) {
+        case HttpMethod::GET: return "GET";
+        case HttpMethod::POST: return "POST";
+        case HttpMethod::DELETE: return "DELETE";
+        case HttpMethod::PUT: return "PUT";
+        case HttpMethod::UNINTIALIZED: return "UNINITIALIZED";
+    }
+    return "UNKNOWN";
+}
+}
 
 // precond: route path is valid
 void Router::add(HttpMethod method, const std::string& path) {
@@ -23,7 +35,7 @@ void Router::add(HttpMethod method, const std::string& path) {
         curr = curr->_children[s].get();
     }
 
-    curr->_route = Route { method, path };
+    curr->_routes.insert_or_assign(method, Route { method, path });
 }
 
 void Router::print() const {
@@ -39,8 +51,18 @@ void Router::print(const RouterNode& node, const std::string& prefix) const {
 
         std::cout << prefix
                   << (isLast ? "└── " : "├── ")
-                  << child->_val
-                  << '\n';
+                  << child->_val;
+
+        if (!child->_routes.empty()) {
+            std::cout << " [";
+            const char* separator = "";
+            for (const auto& [method, route] : child->_routes) {
+                std::cout << separator << method_name(method);
+                separator = ", ";
+            }
+            std::cout << ']';
+        }
+        std::cout << '\n';
 
         print(
             *child,
