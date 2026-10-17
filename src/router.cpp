@@ -29,13 +29,38 @@ void Router::add(HttpMethod method, const std::string& path) {
     
     RouterNode* curr = &_root;
     for (const std::string& s : segments) {
-        if (!curr->_children.contains(s)) {
+        auto it = curr->_children.find(s);
+
+        if (it == curr->_children.end()) {
             curr->_children[s] = std::make_unique<RouterNode>(s);
         }
+
         curr = curr->_children[s].get();
     }
 
     curr->_routes.insert_or_assign(method, path);
+}
+
+// precond: route path is valid
+bool Router::contains(HttpMethod method, const std::string &path) const {
+    if (!path.starts_with("/")) {
+        throw std::invalid_argument("route must begin with /");
+    }
+
+    std::vector<std::string> segments = split(path, '/');
+
+    const RouterNode* curr = &_root;
+    for (const std::string& s : segments) {
+        auto it = curr->_children.find(s);
+
+        if (it == curr->_children.end()) {
+            return false;
+        }
+
+        curr = it->second.get();
+    }
+    
+    return curr->_routes.contains(method);
 }
 
 void Router::print() const {

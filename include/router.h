@@ -13,8 +13,8 @@ class Router {
 public:
     Router() = default;
 
-    void add(HttpMethod method, const std::string& route);
-    bool contains(const std::string& route) const;
+    void add(HttpMethod method, const std::string& path);
+    bool contains(HttpMethod method, const std::string& path) const;
     void remove(const std::string& route);
     void print() const;
 
@@ -28,7 +28,7 @@ private:
         std::unordered_map<std::string, std::unique_ptr<RouterNode>> _children;
     };
 
-    friend class RouterAddTest;
+    friend class RouterTest;
 
     void print(const RouterNode& node, const std::string& prefix) const;
         
