@@ -15,6 +15,7 @@ router_tests = executable(
   'router_tests',
   'router_test.cpp',
   '../src/router.cpp',
+  '../src/http.cpp',
   '../src/utils.cpp',
   include_directories: include_directories('../include'),
   dependencies: gtest_dep,

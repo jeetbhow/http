@@ -5,19 +5,6 @@
 
 #include "utils.h"
 
-namespace {
-const char* method_name(HttpMethod method) {
-    switch (method) {
-        case HttpMethod::GET: return "GET";
-        case HttpMethod::POST: return "POST";
-        case HttpMethod::DELETE: return "DELETE";
-        case HttpMethod::PUT: return "PUT";
-        case HttpMethod::UNINTIALIZED: return "UNINITIALIZED";
-    }
-    return "UNKNOWN";
-}
-}
-
 // precond: route path is valid
 void Router::add(HttpMethod method, const std::string& path) {
     // E.g. /users/add/:id

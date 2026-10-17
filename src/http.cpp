@@ -11,6 +11,17 @@
 
 #include "utils.h"
 
+const char* method_name(HttpMethod method) {
+    switch (method) {
+        case HttpMethod::GET: return "GET";
+        case HttpMethod::POST: return "POST";
+        case HttpMethod::DELETE: return "DELETE";
+        case HttpMethod::PUT: return "PUT";
+        case HttpMethod::UNINTIALIZED: return "UNINITIALIZED";
+    }
+    return "UNKNOWN";
+}
+
 std::optional<std::string> HttpRequest::get_header(const std::string& name) const {
     std::string key = name;
     std::transform(

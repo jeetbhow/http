@@ -15,6 +15,8 @@ enum class HttpMethod {
     PUT,
 };
 
+const char* method_name(HttpMethod method);
+
 enum class HttpVersion {
     ZERO_NINE,
     ONE,
