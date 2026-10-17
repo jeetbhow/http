@@ -2,6 +2,8 @@
 
 A minimal C++23 project built with Meson and Ninja.
 
+Licensed under the [MIT License](LICENSE).
+
 ## Requirements
 
 - A C++23 compiler
