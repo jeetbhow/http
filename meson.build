@@ -13,6 +13,7 @@ executable(
   'src/server.cpp',
   'src/utils.cpp',
   'src/http.cpp',
+  'src/router.cpp',
   include_directories: include_directories('include'),
   install: true,
 )

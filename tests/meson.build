@@ -10,3 +10,14 @@ http_request_parser_tests = executable(
 )
 
 test('http_request_parser', http_request_parser_tests)
+
+router_tests = executable(
+  'router_tests',
+  'router_test.cpp',
+  '../src/router.cpp',
+  '../src/utils.cpp',
+  include_directories: include_directories('../include'),
+  dependencies: gtest_dep,
+)
+
+test('router', router_tests)

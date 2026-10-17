@@ -1,5 +1,18 @@
 #include "utils.h"
 
+#include <sstream>
+
+std::vector<std::string> split(const std::string& s, char delim) {
+    std::stringstream ss{ s };
+    std::vector<std::string> result;
+    std::string part;
+
+    while (std::getline(ss, part, delim)) {
+        result.push_back(part);
+    }
+    
+    return result;
+}
 
 std::string ltrim(const std::string& s) {
     size_t start = s.find_first_not_of(WHITESPACE);

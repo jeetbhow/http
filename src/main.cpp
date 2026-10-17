@@ -1,8 +1,4 @@
-#include "http.h"
-#include "server.h"
-
 #include <iostream>
-#include <exception>
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
@@ -10,14 +6,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-int main() {
-    std::string example_request = 
-    "GET /index.html HTTP/1.1\r\n"
-    "Host: example.com\r\n"
-    "User-Agent: Mozilla/5.0\r\n"
-    "Accept: text/html\r\n"
-    "Connection: keep-alive\r\n";
+#include "router.h"
+#include "utils.h"
 
-    HttpRequestParser parser{std::move(example_request)};
-    parser.parse();
+int main() {
+    std::string create_id = "/user/create/:id";
+    std::string get_id = "/user/:id";
+
+    Router r;
+    r.add(create_id);
+    r.add(get_id);
+    r.print();
 }
