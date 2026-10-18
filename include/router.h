@@ -23,15 +23,16 @@ private:
         RouterNode() = default;
         RouterNode(std::string val) : _val(std::move(val)) {}
          
-        std::string _val;                                                          // Contains a path segment.
-        std::map<HttpMethod, std::string> _routes;                                 // Registered methods and full paths.
-        std::unordered_map<std::string, std::unique_ptr<RouterNode>> _children;
+        std::string _val;                                                                   // Contains a path segment.
+        std::map<HttpMethod, std::string> _routes;                                          // Registered methods and full paths.
+        std::unordered_map<std::string, std::unique_ptr<RouterNode>> _static_children;      // Multiple non-param children.
+        std::unique_ptr<RouterNode> _dynamic_child;                                         // Optional param. Multiple params are ambigious.
     };
 
     friend class RouterTest;
 
     void print(const RouterNode& node, const std::string& prefix) const;
         
-    RouterNode _root = RouterNode{ "" };
-    size_t _size = 0;
+    RouterNode root_ = RouterNode{ "" };
+    size_t size_ = 0;
 };
