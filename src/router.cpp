@@ -6,22 +6,24 @@
 
 #include "utils.h"
 
+using namespace std;
+
 
 // precond: route path is valid
-void Router::add(HttpMethod method, const std::string& path) {
+void Router::add(HttpMethod method, const string& path) {
     // E.g. /users/add/:id
     if (!path.starts_with("/")) {
-        throw std::invalid_argument("route must begin with /");
+        throw invalid_argument("route must begin with /");
     }
 
-    std::vector<std::string> segments = split(path, '/');
+    vector<string> segments = split(path, '/');
     
     RouterNode* curr = &root_;
-    for (const std::string& s : segments) {
+    for (const string& s : segments) {
         // Segment is a parameter
         if (s.starts_with(":")) {
             if (!curr->_dynamic_child) {
-                curr->_dynamic_child = std::make_unique<RouterNode>(s);
+                curr->_dynamic_child = make_unique<RouterNode>(s);
             }
             curr = curr->_dynamic_child.get(); 
             continue;
@@ -30,7 +32,7 @@ void Router::add(HttpMethod method, const std::string& path) {
         // Segment is not a parameter
         auto it = curr->_static_children.find(s);
         if (it == curr->_static_children.end()) {
-            curr->_static_children[s] = std::make_unique<RouterNode>(s);
+            curr->_static_children[s] = make_unique<RouterNode>(s);
         }
         curr = curr->_static_children[s].get();
     }
@@ -40,15 +42,15 @@ void Router::add(HttpMethod method, const std::string& path) {
 }
 
 // precond: route path is valid
-bool Router::contains(HttpMethod method, const std::string &path) const {
+bool Router::contains(HttpMethod method, const string &path) const {
     if (!path.starts_with("/")) {
-        throw std::invalid_argument("route must begin with /");
+        throw invalid_argument("route must begin with /");
     }
 
-    std::vector<std::string> segments = split(path, '/');
+    vector<string> segments = split(path, '/');
 
     const RouterNode* curr = &root_;
-    for (const std::string& s : segments) {
+    for (const string& s : segments) {
         // Check if the segment matches a regular path segment first. 
         auto it = curr->_static_children.find(s);
 
@@ -74,26 +76,26 @@ void Router::print() const {
 }
 
 
-void Router::print(const RouterNode& node, const std::string& prefix) const {
+void Router::print(const RouterNode& node, const string& prefix) const {
     size_t i = 0;
     const size_t child_count = node._static_children.size() + (node._dynamic_child ? 1 : 0);
     const auto print_child = [&](const RouterNode& child) {
         const bool isLast = (++i == child_count);
 
-        std::cout << prefix
+        cout << prefix
                   << (isLast ? "└── " : "├── ")
                   << child._val;
 
         if (!child._routes.empty()) {
-            std::cout << " [";
+            cout << " [";
             const char* separator = "";
             for (const auto& [method, path] : child._routes) {
-                std::cout << separator << method_name(method);
+                cout << separator << method_name(method);
                 separator = ", ";
             }
-            std::cout << ']';
+            cout << ']';
         }
-        std::cout << '\n';
+        cout << '\n';
 
         print(
             child,
