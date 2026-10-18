@@ -13,5 +13,4 @@ int main() {
     Router r;
     r.add(HttpMethod::GET, "/users/:id");
     r.add(HttpMethod::PUT, "/users/:id");
-    r.print();
 }

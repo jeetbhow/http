@@ -1,6 +1,5 @@
 #include "router.h"
 
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 
@@ -23,7 +22,7 @@ void Router::add(HttpMethod method, const string& path) {
         // Segment is a parameter
         if (s.starts_with(":")) {
             if (!curr->_dynamic_child) {
-                curr->_dynamic_child = make_unique<RouterNode>(s);
+                curr->_dynamic_child = make_unique<RouterNode>();
             }
             curr = curr->_dynamic_child.get(); 
             continue;
@@ -32,13 +31,12 @@ void Router::add(HttpMethod method, const string& path) {
         // Segment is not a parameter
         auto it = curr->_static_children.find(s);
         if (it == curr->_static_children.end()) {
-            curr->_static_children[s] = make_unique<RouterNode>(s);
+            curr->_static_children[s] = make_unique<RouterNode>();
         }
         curr = curr->_static_children[s].get();
     }
 
     curr->_routes.insert_or_assign(method, path);
-    size_++;
 }
 
 // precond: route path is valid
@@ -69,44 +67,4 @@ bool Router::contains(HttpMethod method, const string &path) const {
     }
     
     return curr->_routes.contains(method);
-}
-
-void Router::print() const {
-    print(root_, "");
-}
-
-
-void Router::print(const RouterNode& node, const string& prefix) const {
-    size_t i = 0;
-    const size_t child_count = node._static_children.size() + (node._dynamic_child ? 1 : 0);
-    const auto print_child = [&](const RouterNode& child) {
-        const bool isLast = (++i == child_count);
-
-        cout << prefix
-                  << (isLast ? "└── " : "├── ")
-                  << child._val;
-
-        if (!child._routes.empty()) {
-            cout << " [";
-            const char* separator = "";
-            for (const auto& [method, path] : child._routes) {
-                cout << separator << method_name(method);
-                separator = ", ";
-            }
-            cout << ']';
-        }
-        cout << '\n';
-
-        print(
-            child,
-            prefix + (isLast ? "    " : "│   ")
-        );
-    };
-
-    for (const auto& [seg, child] : node._static_children) {
-        print_child(*child);
-    }
-    if (node._dynamic_child) {
-        print_child(*node._dynamic_child);
-    }
 }

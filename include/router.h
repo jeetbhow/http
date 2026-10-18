@@ -15,15 +15,11 @@ public:
 
     void add(HttpMethod method, const std::string& path);
     bool contains(HttpMethod method, const std::string& path) const;
-    void remove(const std::string& route);
-    void print() const;
 
 private:
     struct RouterNode {
         RouterNode() = default;
-        RouterNode(std::string val) : _val(std::move(val)) {}
-         
-        std::string _val;                                                                   // Contains a path segment.
+        
         std::map<HttpMethod, std::string> _routes;                                          // Registered methods and full paths.
         std::unordered_map<std::string, std::unique_ptr<RouterNode>> _static_children;      // Multiple non-param children.
         std::unique_ptr<RouterNode> _dynamic_child;                                         // Optional param. Multiple params are ambigious.
@@ -31,8 +27,16 @@ private:
 
     friend class RouterTest;
 
-    void print(const RouterNode& node, const std::string& prefix) const;
+    /**
+     * @brief Recursive helper method for `contains` that traverses as deep into the structure as
+     * possible and finds the closest `RouterNode` that matches.
+     * 
+     * @param method The method for the route. 
+     * @param path The path for the route.
+     * @param curr The current node that we're analyzing in the recursive structure.
+     * @return RouterNode* A pointer to the node that we have found.
+     */
+    RouterNode* find(HttpMethod method, const std::string& path, RouterNode& curr) const;
         
-    RouterNode root_ = RouterNode{ "" };
-    size_t size_ = 0;
+    RouterNode root_;
 };
